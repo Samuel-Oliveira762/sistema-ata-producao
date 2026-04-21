@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Atas de Produção</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-brand">
+          <p class="eyebrow">Gestão local</p>
+          <h1>Atas de reunião de produção</h1>
+        </div>
+        <nav class="topbar-nav">
+          <button class="nav-link is-active" data-target="workspace-section" type="button">Nova ata</button>
+          <button class="nav-link" data-target="history-section" type="button">Histórico</button>
+          <button class="nav-link" data-target="details-section" type="button">Detalhes</button>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">MVP front-end puro</p>
+          <h2>Importador diário + editor de ata + histórico local</h2>
+        </div>
+        <div class="hero-actions">
+          <button id="theme-toggle-btn" class="btn btn-ghost theme-toggle-btn" type="button">Modo escuro</button>
+          <label class="export-toggle" for="export-actions-only">
+            <input id="export-actions-only" type="checkbox" checked>
+            <span>PDF apenas com itens que tenham plano de ação</span>
+          </label>
+          <button id="save-minute-btn" class="btn btn-primary" type="button">Salvar ata</button>
+          <button id="export-pdf-btn" class="btn btn-secondary" type="button">Exportar PDF</button>
+        </div>
+      </section>
+
+      <section id="alert-container" class="alert-container" aria-live="polite"></section>
+
+      <section id="workspace-section" class="page-section is-visible">
+        <div class="grid-layout">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-kicker">Entrada</p>
+                <h3>Upload da planilha</h3>
+              </div>
+            </div>
+
+            <label class="upload-zone" for="spreadsheet-input">
+              <input id="spreadsheet-input" type="file" accept=".xlsx" hidden>
+              <span class="upload-title">Selecione um arquivo Excel (.xlsx)</span>
+              <span class="upload-subtitle">A leitura acontece diretamente no navegador.</span>
+            </label>
+
+            <div class="meta-grid compact">
+              <div class="meta-box">
+                <span>Arquivo atual</span>
+                <strong id="current-file-name">Nenhum arquivo importado</strong>
+              </div>
+              <div class="meta-box">
+                <span>Registros válidos</span>
+                <strong id="current-record-count">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-kicker">Reunião</p>
+                <h3>Dados gerais da ata</h3>
+              </div>
+            </div>
+
+            <form id="meeting-form" class="form-grid">
+              <label>
+                <span>Assunto</span>
+                <input type="text" name="subject" placeholder="Ex.: Reunião diária da produção">
+              </label>
+              <label>
+                <span>Data da reunião</span>
+                <input type="date" name="meetingDate">
+              </label>
+              <label class="span-2">
+                <span>Participantes</span>
+                <textarea name="participants" rows="2" placeholder="Preenchido automaticamente pela lista de presença" readonly></textarea>
+              </label>
+              <label>
+                <span>Responsável geral</span>
+                <input type="text" name="owner" list="owner-options" placeholder="Nome do responsável">
+                <datalist id="owner-options"></datalist>
+              </label>
+              <label>
+                <span>Início</span>
+                <input type="time" name="startTime">
+              </label>
+              <label>
+                <span>Fim</span>
+                <input type="time" name="endTime">
+              </label>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Presença</p>
+              <h3>Chamada da reunião</h3>
+            </div>
+          </div>
+
+          <div class="attendance-toolbar">
+            <label class="attendance-add">
+              <span>Novo participante</span>
+              <input id="participant-name-input" type="text" placeholder="Nome do participante">
+            </label>
+            <label class="attendance-role">
+              <span>Cargo</span>
+              <input id="participant-role-input" type="text" placeholder="Ex.: PCP, Gerente, Comercial">
+            </label>
+            <button id="add-participant-btn" class="btn btn-secondary" type="button">Adicionar participante</button>
+          </div>
+
+          <div class="table-wrapper records-table-wrapper">
+            <table class="data-table attendance-table">
+              <thead>
+                <tr>
+                  <th>Participante</th>
+                  <th>Cargo</th>
+                  <th>Presente</th>
+                  <th>Horário de chegada</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="attendance-tbody">
+                <tr>
+                  <td colspan="5" class="empty-state-cell">Adicione participantes para iniciar a chamada.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Controle</p>
+              <h3>Filtros e resumo</h3>
+            </div>
+          </div>
+
+          <div class="filters-grid">
+            <label>
+              <span>Cliente</span>
+              <select id="filter-client">
+                <option value="">Todos</option>
+              </select>
+            </label>
+            <label>
+              <span>Criticidade</span>
+              <select id="filter-criticality">
+                <option value="">Todas</option>
+                <option value="critico">Crítico</option>
+                <option value="atencao">Atenção</option>
+                <option value="normal">Normal</option>
+              </select>
+            </label>
+            <label>
+              <span>Modo</span>
+              <select id="filter-mode">
+                <option value="all">Todos os registros</option>
+                <option value="critical-only">Apenas críticos</option>
+              </select>
+            </label>
+            <label>
+              <span>Busca</span>
+              <input id="filter-search" type="search" placeholder="Produto ou descrição">
+            </label>
+            <label>
+              <span>Entrega</span>
+              <input id="filter-delivery-date" type="date">
+            </label>
+            <div class="filter-actions">
+              <button id="clear-filters-btn" class="btn btn-ghost" type="button">Limpar filtros</button>
+            </div>
+          </div>
+
+          <div id="summary-cards" class="summary-grid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Edição ao vivo</p>
+              <h3>Tabela principal</h3>
+            </div>
+          </div>
+          <div class="table-wrapper records-table-wrapper">
+            <table class="data-table records-header-table">
+              <colgroup>
+                <col class="col-client">
+                <col class="col-production">
+                <col class="col-product">
+                <col class="col-description">
+                <col class="col-delivery">
+                <col class="col-balance">
+                <col class="col-percent">
+                <col class="col-advance">
+                <col class="col-criticality">
+                <col class="col-action">
+                <col class="col-owner">
+                <col class="col-deadline">
+                <col class="col-status">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Produção</th>
+                  <th>Produto</th>
+                  <th>Descrição</th>
+                  <th>Entrega</th>
+                  <th>Saldo</th>
+                  <th>%</th>
+                  <th>Antecipação</th>
+                  <th>Criticidade</th>
+                  <th>Plano de ação</th>
+                  <th>Responsável</th>
+                  <th>Prazo</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+            </table>
+            <div class="records-table-body" id="records-table-body">
+              <table class="data-table records-body-table">
+                <colgroup>
+                  <col class="col-client">
+                  <col class="col-production">
+                  <col class="col-product">
+                  <col class="col-description">
+                  <col class="col-delivery">
+                  <col class="col-balance">
+                  <col class="col-percent">
+                  <col class="col-advance">
+                  <col class="col-criticality">
+                  <col class="col-action">
+                  <col class="col-owner">
+                  <col class="col-deadline">
+                  <col class="col-status">
+                </colgroup>
+                <tbody id="records-tbody">
+                <tr>
+                    <td colspan="13" class="empty-state-cell">Importe uma planilha para começar.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Acompanhamento</p>
+              <h3>Pendências gerais da reunião</h3>
+            </div>
+            <button id="add-pending-btn" class="btn btn-secondary" type="button">Adicionar pendência</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Ação</th>
+                  <th>Responsável</th>
+                  <th>Prazo</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="general-pending-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Pré-visualização</p>
+              <h3>Ata pronta para consulta e PDF</h3>
+            </div>
+          </div>
+
+          <div id="preview-root" class="preview-root"></div>
+        </div>
+      </section>
+
+      <section id="history-section" class="page-section">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Seguranca local</p>
+              <h3>Backup e restauracao</h3>
+            </div>
+          </div>
+
+          <div class="backup-grid">
+            <div class="backup-card">
+              <span class="backup-label">Exportacao</span>
+              <strong>Fazer backup dos dados locais</strong>
+              <p>Baixa um arquivo JSON com historico, participantes, tema e outras chaves persistidas do sistema.</p>
+              <button id="backup-export-btn" class="btn btn-primary" type="button">Exportar dados</button>
+            </div>
+
+            <div class="backup-card">
+              <span class="backup-label">Restauracao</span>
+              <strong>Importar backup salvo</strong>
+              <p>Substitui os dados atuais deste navegador pelo conteudo do arquivo JSON selecionado.</p>
+              <label class="backup-file-input">
+                <span>Selecionar arquivo .json</span>
+                <input id="backup-file-input" type="file" accept=".json">
+              </label>
+              <div id="backup-file-name" class="backup-file-name">Nenhum arquivo selecionado.</div>
+              <button id="backup-import-btn" class="btn btn-secondary" type="button" disabled>Importar dados</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Persistência local</p>
+              <h3>Histórico de atas salvas</h3>
+            </div>
+          </div>
+
+          <div class="filters-grid">
+            <label>
+              <span>Assunto</span>
+              <input id="history-filter-subject" type="search" placeholder="Buscar por assunto">
+            </label>
+            <label>
+              <span>Responsável</span>
+              <input id="history-filter-owner" type="search" placeholder="Buscar por responsável">
+            </label>
+            <label>
+              <span>Data da reunião</span>
+              <input id="history-filter-date" type="date">
+            </label>
+            <label>
+              <span>Cliente</span>
+              <input id="history-filter-client" type="search" placeholder="Buscar por cliente">
+            </label>
+          </div>
+
+          <div id="history-list" class="history-grid"></div>
+        </div>
+      </section>
+
+      <section id="details-section" class="page-section">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Consulta</p>
+              <h3>Detalhes de ata salva</h3>
+            </div>
+            <div class="hero-actions">
+              <button id="details-load-btn" class="btn btn-secondary" type="button" disabled>Carregar para edição</button>
+              <button id="details-export-btn" class="btn btn-primary" type="button" disabled>Exportar PDF</button>
+            </div>
+          </div>
+
+          <div id="details-root" class="preview-root empty-details">
+            Selecione uma ata no histórico para visualizar os detalhes completos.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="js/excel.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/backup.js"></script>
+  <script src="js/pdf.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
