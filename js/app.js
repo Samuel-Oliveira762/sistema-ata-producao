@@ -318,6 +318,34 @@
     elements.filterClient.value = state.filters.client;
   }
 
+  function formatRemainingOperations(setores) {
+    const rawText = String(setores || "").trim();
+    if (!rawText) {
+      return {
+        markup: ""
+      };
+    }
+
+    const operations = rawText
+      .split(/[\n;,|/]+/)
+      .map((item) => String(item || "").trim())
+      .filter(Boolean);
+
+    if (!operations.length) {
+      return {
+        markup: `<span class="ops-tag ${rawText.includes("*") ? "is-delayed" : ""}">${UiService.escapeHtml(rawText.replace(/\*/g, "").trim() || rawText.trim())}</span>`
+      };
+    }
+
+    return {
+      markup: operations.map((operation) => {
+        const delayed = operation.includes("*");
+        const cleanLabel = operation.replace(/\*/g, "").trim() || operation.trim();
+        return `<span class="ops-tag ${delayed ? "is-delayed" : ""}">${UiService.escapeHtml(cleanLabel)}</span>`;
+      }).join("")
+    };
+  }
+
   function renderRecordsTable() {
     const records = getFilteredRecords();
 
@@ -358,6 +386,28 @@
         </td>
       </tr>
     `).join("");
+
+    const mainRows = [...elements.recordsTbody.querySelectorAll("tr")];
+
+    records.forEach((record, index) => {
+      const referenceRow = mainRows[index];
+      if (!referenceRow) {
+        return;
+      }
+
+      const operationsInfo = formatRemainingOperations(record.setores);
+      const detailsRow = document.createElement("tr");
+
+      detailsRow.className = `record-ops-row row-${record.criticidade}`;
+      detailsRow.innerHTML = `
+        <td colspan="9" class="record-ops-cell">
+          <div class="record-ops-tags">${operationsInfo.markup}</div>
+        </td>
+        <td colspan="4" class="record-ops-spacer"></td>
+      `;
+
+      referenceRow.insertAdjacentElement("afterend", detailsRow);
+    });
   }
 
   function renderGeneralPendings() {

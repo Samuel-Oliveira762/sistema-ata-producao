@@ -610,6 +610,10 @@ textarea {
   background: var(--surface);
 }
 
+.records-body-table tbody > tr:not(.record-ops-row) td {
+  border-bottom: 0;
+}
+
 .data-table {
   width: 100%;
   min-width: 1250px;
@@ -658,6 +662,79 @@ textarea {
 
 .editable-textarea {
   min-height: 34px;
+}
+
+.record-ops-row td {
+  padding-top: 0;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--table-line);
+}
+
+.record-ops-cell {
+  border-top: 0;
+  padding-top: 0;
+  padding-bottom: 2px;
+}
+
+.record-ops-spacer {
+  border-top: 0;
+  background: transparent;
+  padding-top: 0;
+  padding-bottom: 2px;
+}
+
+.record-ops-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.record-ops-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.record-ops-warning {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: var(--badge-critical-bg);
+  color: var(--badge-critical-text);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.record-ops-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: -7px;
+  padding-bottom: 0;
+}
+
+.ops-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.ops-tag.is-delayed {
+  border-color: rgba(200, 61, 61, 0.35);
+  background: var(--badge-critical-bg);
+  color: var(--badge-critical-text);
 }
 
 .status-badge,
