@@ -55,6 +55,51 @@ Depois acesse:
 http://localhost:8000
 ```
 
+## Publicacao no GitHub Pages
+
+Voce pode publicar o sistema no GitHub Pages e acessar a interface de qualquer computador.
+
+### O que funciona normalmente
+
+- importacao da planilha `.xlsx`
+- edicao da ata no navegador
+- exportacao de PDF
+- backup e restauracao por `.json`
+- historico local no navegador
+- memoria automatica por OP
+
+### Limitacao importante
+
+O site fica online, mas os dados continuam locais em cada navegador porque o projeto usa `localStorage`.
+
+Isso significa:
+
+- o sistema abre de qualquer PC
+- mas historico, participantes, memoria por OP e configuracoes nao sincronizam automaticamente entre maquinas
+- para transferir os dados de um computador para outro, use `Exportar dados` e depois `Importar dados`
+
+### Passo a passo para publicar
+
+1. Crie um repositorio novo no GitHub.
+2. Envie os arquivos deste projeto para a raiz do repositorio.
+3. Confirme que o arquivo principal se chama `index.html`.
+4. No GitHub, abra `Settings`.
+5. Entre em `Pages`.
+6. Em `Build and deployment`, escolha:
+   - `Source`: `Deploy from a branch`
+   - `Branch`: `main` e pasta `/ (root)`
+7. Salve.
+8. Aguarde a publicacao.
+9. O GitHub vai gerar uma URL parecida com:
+
+```text
+https://seu-usuario.github.io/nome-do-repositorio/
+```
+
+### Atualizando o site publicado
+
+Sempre que voce enviar novas alteracoes para a branch publicada, o GitHub Pages atualiza o site automaticamente.
+
 ## Fluxo de uso
 
 1. Faca upload da planilha `.xlsx`.
