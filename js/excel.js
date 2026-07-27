@@ -216,7 +216,10 @@
       prazo: "",
       replanejadoQuantidade: "",
       prazoReplanejado: "",
-      statusAcao: ""
+      statusAcao: "",
+      observacoes: "",
+      detalhesAntecipacao: "",
+      dataSolicitadaCliente: ""
     };
   }
 

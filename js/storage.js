@@ -2,10 +2,12 @@
   const STORAGE_KEY = "production_minutes_history_v1";
   const PARTICIPANTS_KEY = "production_minutes_participants_v1";
   const OP_DATABASE_KEY = "opDatabase";
+  const GENERAL_PENDINGS_KEY = "production_minutes_general_pendings_v1";
   const STORAGE_KEYS = {
     minutes: STORAGE_KEY,
     participants: PARTICIPANTS_KEY,
-    opDatabase: OP_DATABASE_KEY
+    opDatabase: OP_DATABASE_KEY,
+    generalPendings: GENERAL_PENDINGS_KEY
   };
 
   function loadMinutes() {
@@ -60,6 +62,25 @@
     return participants;
   }
 
+  function loadGeneralPendings() {
+    try {
+      const raw = localStorage.getItem(GENERAL_PENDINGS_KEY);
+      if (raw === null) {
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveGeneralPendings(pendings) {
+    const safePendings = Array.isArray(pendings) ? pendings : [];
+    localStorage.setItem(GENERAL_PENDINGS_KEY, JSON.stringify(safePendings));
+    return safePendings;
+  }
+
   function loadOPDatabase() {
     try {
       const raw = localStorage.getItem(OP_DATABASE_KEY);
@@ -109,6 +130,8 @@
     getMinuteById,
     loadParticipants,
     saveParticipants,
+    loadGeneralPendings,
+    saveGeneralPendings,
     loadOPDatabase,
     saveOPDatabase,
     getOPData,

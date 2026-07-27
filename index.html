@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -19,6 +19,7 @@
         </div>
         <nav class="topbar-nav">
           <button class="nav-link is-active" data-target="workspace-section" type="button">Nova ata</button>
+          <button class="nav-link" data-target="general-pendings-section" type="button">Pendências</button>
           <button class="nav-link" data-target="history-section" type="button">Histórico</button>
           <button class="nav-link" data-target="details-section" type="button">Detalhes</button>
         </nav>
@@ -26,8 +27,8 @@
 
       <section class="hero">
         <div>
-          <p class="eyebrow">MVP front-end puro</p>
-          <h2>Importador diário + editor de ata + histórico local</h2>
+          <p class="eyebrow">Plataforma operacional</p>
+          <h2>Sistema de gestão de atas, pendências e acompanhamento da produção</h2>
         </div>
         <div class="hero-actions">
           <button id="theme-toggle-btn" class="btn btn-ghost theme-toggle-btn" type="button">Modo escuro</button>
@@ -211,13 +212,12 @@
                 <col class="col-description">
                 <col class="col-delivery">
                 <col class="col-balance">
-                <col class="col-percent">
-                <col class="col-advance">
                 <col class="col-criticality">
                 <col class="col-action">
                 <col class="col-owner">
                 <col class="col-deadline">
                 <col class="col-status">
+                <col class="col-expand">
               </colgroup>
               <thead>
                 <tr>
@@ -227,13 +227,12 @@
                   <th>Descrição</th>
                   <th>Entrega</th>
                   <th>Saldo</th>
-                  <th>%</th>
-                  <th>Antecipação</th>
                   <th>Criticidade</th>
                   <th>Plano de ação</th>
                   <th>Responsável</th>
                   <th>Prazo</th>
                   <th>Status</th>
+                  <th></th>
                 </tr>
               </thead>
             </table>
@@ -246,46 +245,20 @@
                   <col class="col-description">
                   <col class="col-delivery">
                   <col class="col-balance">
-                  <col class="col-percent">
-                  <col class="col-advance">
                   <col class="col-criticality">
                   <col class="col-action">
                   <col class="col-owner">
                   <col class="col-deadline">
                   <col class="col-status">
+                  <col class="col-expand">
                 </colgroup>
                 <tbody id="records-tbody">
                 <tr>
-                    <td colspan="13" class="empty-state-cell">Importe uma planilha para começar.</td>
+                    <td colspan="12" class="empty-state-cell">Importe uma planilha para começar.</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="panel-kicker">Acompanhamento</p>
-              <h3>Pendências gerais da reunião</h3>
-            </div>
-            <button id="add-pending-btn" class="btn btn-secondary" type="button">Adicionar pendência</button>
-          </div>
-
-          <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Ação</th>
-                  <th>Responsável</th>
-                  <th>Prazo</th>
-                  <th>Status</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="general-pending-tbody"></tbody>
-            </table>
           </div>
         </div>
 
@@ -298,6 +271,66 @@
           </div>
 
           <div id="preview-root" class="preview-root"></div>
+        </div>
+      </section>
+
+      <section id="general-pendings-section" class="page-section">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Acompanhamento</p>
+              <h3>Pendências gerais da reunião</h3>
+            </div>
+            <button id="add-pending-btn" class="btn btn-secondary" type="button">Adicionar pendência</button>
+          </div>
+
+          <div class="persistent-pendings-intro">
+            Este relatório é salvo automaticamente no navegador e continua disponível até que você exclua as pendências.
+          </div>
+
+          <div class="filters-grid pending-report-filters">
+            <label>
+              <span>Responsável</span>
+              <input id="pending-filter-owner" type="search" placeholder="Buscar por responsável">
+            </label>
+            <label>
+              <span>Status</span>
+              <select id="pending-filter-status">
+                <option value="">Todos</option>
+                <option value="pendente">Pendente</option>
+                <option value="em_andamento">Em andamento</option>
+                <option value="concluido">Concluído</option>
+              </select>
+            </label>
+            <label>
+              <span>Vencimento</span>
+              <select id="pending-filter-due">
+                <option value="">Todos</option>
+                <option value="late">Vencidas</option>
+                <option value="today">Vencem hoje</option>
+                <option value="upcoming">Próximas</option>
+                <option value="no-date">Sem prazo</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="pending-summary-cards" class="summary-grid"></div>
+
+          <div class="table-wrapper">
+            <table class="data-table pending-report-table">
+              <thead>
+                <tr>
+                  <th>Causa</th>
+                  <th>Ação</th>
+                  <th>Responsável</th>
+                  <th>Prazo</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="general-pending-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -399,3 +432,6 @@
   <script src="js/app.js"></script>
 </body>
 </html>
+
+
+

@@ -598,13 +598,13 @@ textarea {
 .col-description { width: 260px; }
 .col-delivery { width: 110px; }
 .col-balance { width: 90px; }
-.col-percent { width: 80px; }
 .col-advance { width: 110px; }
 .col-criticality { width: 120px; }
 .col-action { width: 260px; }
 .col-owner { width: 170px; }
 .col-deadline { width: 120px; }
 .col-status { width: 140px; }
+.col-expand { width: 44px; }
 
 .records-body-table td {
   background: var(--surface);
@@ -662,6 +662,26 @@ textarea {
 
 .editable-textarea {
   min-height: 34px;
+}
+
+.record-expand-cell {
+  text-align: center;
+}
+
+.row-expand-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.row-expand-btn:hover {
+  background: var(--hover-bg);
 }
 
 .record-ops-row td {
@@ -735,6 +755,216 @@ textarea {
   border-color: rgba(200, 61, 61, 0.35);
   background: var(--badge-critical-bg);
   color: var(--badge-critical-text);
+}
+
+.minute-inline-note {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.record-expand-row td {
+  padding-top: 0;
+}
+
+.record-expand-panel {
+  padding: 0 5px 6px;
+  background: transparent;
+}
+
+.record-expand-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-left: 18px;
+  padding: 7px 10px 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-alt) 88%, var(--surface));
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.record-expand-field {
+  display: grid;
+  gap: 4px;
+}
+
+.record-expand-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 2px;
+  color: var(--text);
+}
+
+.record-expand-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.record-expand-check strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.record-expand-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.record-expand-stat {
+  display: grid;
+  gap: 3px;
+  padding: 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.record-expand-stat span {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.record-expand-stat strong {
+  font-size: 0.94rem;
+  color: var(--text);
+}
+
+.record-expand-field span {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.record-expand-span-2 {
+  grid-column: span 2;
+}
+
+.persistent-pendings-intro {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-alt) 78%, var(--surface));
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.pending-report-filters {
+  margin-bottom: 8px;
+}
+
+.pending-report-table {
+  table-layout: fixed;
+}
+
+#general-pending-tbody tr.pending-row-done .editable-input,
+#general-pending-tbody tr.pending-row-done .editable-textarea,
+#general-pending-tbody tr.pending-row-done .editable-select {
+  border-color: rgba(44, 122, 74, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(44, 122, 74, 0.16);
+}
+
+#general-pending-tbody tr.pending-row-progress .editable-input,
+#general-pending-tbody tr.pending-row-progress .editable-textarea,
+#general-pending-tbody tr.pending-row-progress .editable-select {
+  border-color: rgba(197, 137, 24, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(197, 137, 24, 0.18);
+}
+
+#general-pending-tbody tr.pending-row-late .editable-input,
+#general-pending-tbody tr.pending-row-late .editable-textarea,
+#general-pending-tbody tr.pending-row-late .editable-select {
+  border-color: rgba(193, 68, 68, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(193, 68, 68, 0.18);
+}
+
+.pending-inline-meta {
+  margin-top: 5px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: left;
+  justify-self: start;
+  width: 100%;
+}
+
+.pending-deadline-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+  max-width: 430px;
+}
+
+.pending-deadline-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 86%, var(--surface));
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.pending-report-table th:nth-child(1),
+#general-pending-tbody td:nth-child(1) {
+  width: 17%;
+}
+
+.pending-report-table th:nth-child(2),
+#general-pending-tbody td:nth-child(2) {
+  width: 27%;
+}
+
+.pending-report-table th:nth-child(3),
+#general-pending-tbody td:nth-child(3) {
+  width: 20%;
+}
+
+.pending-report-table th:nth-child(4),
+#general-pending-tbody td:nth-child(4) {
+  width: 16%;
+}
+
+.pending-report-table th:nth-child(5),
+#general-pending-tbody td:nth-child(5) {
+  width: 10%;
+}
+
+#general-pending-tbody td:nth-child(4) .editable-input[type="date"] {
+  width: 154px;
+  max-width: 100%;
+}
+
+body.dark-theme .record-expand-grid {
+  background: color-mix(in srgb, var(--surface-alt) 92%, #223149);
+  border-color: color-mix(in srgb, var(--border) 76%, transparent);
+  box-shadow: inset 3px 0 0 rgba(126, 181, 255, 0.28);
+}
+
+body.dark-theme .persistent-pendings-intro {
+  background: color-mix(in srgb, var(--surface-alt) 88%, #1d2a43);
+}
+
+body.dark-theme .pending-deadline-chip {
+  background: color-mix(in srgb, var(--surface-alt) 88%, #1d2a43);
+}
+
+body.dark-theme .record-expand-stat {
+  background: color-mix(in srgb, var(--surface) 88%, #1a2740);
 }
 
 .status-badge,

@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const CRITICAL_RULES = {
     attentionDaysBeforeDue: 5
   };
@@ -16,6 +16,11 @@
       search: "",
       deliveryDate: ""
     },
+    pendingFilters: {
+      owner: "",
+      status: "",
+      due: ""
+    },
     meeting: {
       subject: "",
       meetingDate: new Date().toISOString().slice(0, 10),
@@ -26,6 +31,7 @@
     },
     attendance: [],
     participantCatalog: [],
+    expandedRecords: {},
     exportActionsOnly: true,
     generalPendings: [],
     alerts: []
@@ -36,11 +42,54 @@
   function createEmptyPending() {
     return {
       id: `pending-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+      causa: "",
       acao: "",
       responsavel: "",
       prazo: "",
-      status: "pendente"
+      status: "pendente",
+      dataAbertura: new Date().toISOString().slice(0, 10),
+      historicoPrazos: []
     };
+  }
+
+  function normalizePending(pending) {
+    return {
+      id: pending.id || `pending-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+      causa: String(pending.causa || ""),
+      acao: String(pending.acao || ""),
+      responsavel: String(pending.responsavel || ""),
+      prazo: String(pending.prazo || ""),
+      status: pending.status || "pendente",
+      dataAbertura: ExcelService.parseDate(pending.dataAbertura) || new Date().toISOString().slice(0, 10),
+      historicoPrazos: Array.isArray(pending.historicoPrazos)
+        ? pending.historicoPrazos
+          .map((entry) => ({
+            data: ExcelService.parseDate(entry.data),
+            registradaEm: ExcelService.parseDate(entry.registradaEm) || new Date().toISOString().slice(0, 10)
+          }))
+          .filter((entry) => entry.data)
+        : []
+    };
+  }
+
+  function appendPendingDeadlineHistory(pending, previousDate, nextDate) {
+    const normalizedPrevious = ExcelService.parseDate(previousDate);
+    const normalizedNext = ExcelService.parseDate(nextDate);
+
+    if (!normalizedPrevious || normalizedPrevious === normalizedNext) {
+      return;
+    }
+
+    const lastEntry = Array.isArray(pending.historicoPrazos) ? pending.historicoPrazos[pending.historicoPrazos.length - 1] : null;
+    if (lastEntry && lastEntry.data === normalizedPrevious) {
+      return;
+    }
+
+    pending.historicoPrazos = Array.isArray(pending.historicoPrazos) ? pending.historicoPrazos : [];
+    pending.historicoPrazos.push({
+      data: normalizedPrevious,
+      registradaEm: new Date().toISOString().slice(0, 10)
+    });
   }
 
   function createAttendanceParticipant(name, role) {
@@ -90,6 +139,10 @@
     elements.historyFilterOwner = document.getElementById("history-filter-owner");
     elements.historyFilterDate = document.getElementById("history-filter-date");
     elements.historyFilterClient = document.getElementById("history-filter-client");
+    elements.pendingFilterOwner = document.getElementById("pending-filter-owner");
+    elements.pendingFilterStatus = document.getElementById("pending-filter-status");
+    elements.pendingFilterDue = document.getElementById("pending-filter-due");
+    elements.pendingSummaryCards = document.getElementById("pending-summary-cards");
     elements.exportActionsOnly = document.getElementById("export-actions-only");
     elements.themeToggleBtn = document.getElementById("theme-toggle-btn");
     elements.backupExportBtn = document.getElementById("backup-export-btn");
@@ -219,16 +272,19 @@
       return { ...record };
     }
 
-    return {
-      ...record,
-      planoAcao: opData.planoAcao ?? record.planoAcao ?? "",
-      responsavel: opData.responsavel ?? record.responsavel ?? "",
-      prazo: opData.prazo ?? record.prazo ?? "",
-      replanejadoQuantidade: opData.replanejadoQuantidade ?? record.replanejadoQuantidade ?? "",
-      prazoReplanejado: opData.prazoReplanejado ?? record.prazoReplanejado ?? "",
-      statusAcao: opData.statusAcao ?? record.statusAcao ?? "",
-      dataUltimaAtualizacao: opData.dataUltimaAtualizacao ?? record.dataUltimaAtualizacao ?? ""
-    };
+      return {
+        ...record,
+        planoAcao: opData.planoAcao ?? record.planoAcao ?? "",
+        responsavel: opData.responsavel ?? record.responsavel ?? "",
+        prazo: opData.prazo ?? record.prazo ?? "",
+        observacoes: opData.observacoes ?? record.observacoes ?? "",
+        detalhesAntecipacao: opData.detalhesAntecipacao ?? record.detalhesAntecipacao ?? "",
+        dataSolicitadaCliente: opData.dataSolicitadaCliente ?? record.dataSolicitadaCliente ?? "",
+        replanejadoQuantidade: opData.replanejadoQuantidade ?? record.replanejadoQuantidade ?? "",
+        prazoReplanejado: opData.prazoReplanejado ?? record.prazoReplanejado ?? "",
+        statusAcao: opData.statusAcao ?? record.statusAcao ?? "",
+        dataUltimaAtualizacao: opData.dataUltimaAtualizacao ?? record.dataUltimaAtualizacao ?? ""
+      };
   }
 
   function applyOPMemory(records) {
@@ -246,15 +302,18 @@
         return;
       }
 
-      opDatabase[producao] = {
-        planoAcao: String(record.planoAcao || "").trim(),
-        responsavel: String(record.responsavel || "").trim(),
-        prazo: String(record.prazo || "").trim(),
-        replanejadoQuantidade: record.replanejadoQuantidade ?? "",
-        prazoReplanejado: String(record.prazoReplanejado || "").trim(),
-        statusAcao: String(record.statusAcao || "").trim(),
-        dataUltimaAtualizacao: today
-      };
+        opDatabase[producao] = {
+          planoAcao: String(record.planoAcao || "").trim(),
+          responsavel: String(record.responsavel || "").trim(),
+          prazo: String(record.prazo || "").trim(),
+          observacoes: String(record.observacoes || "").trim(),
+          detalhesAntecipacao: String(record.detalhesAntecipacao || "").trim(),
+          dataSolicitadaCliente: String(record.dataSolicitadaCliente || "").trim(),
+          replanejadoQuantidade: record.replanejadoQuantidade ?? "",
+          prazoReplanejado: String(record.prazoReplanejado || "").trim(),
+          statusAcao: String(record.statusAcao || "").trim(),
+          dataUltimaAtualizacao: today
+        };
     });
 
     StorageService.saveOPDatabase(opDatabase);
@@ -350,7 +409,7 @@
     const records = getFilteredRecords();
 
     if (!records.length) {
-      elements.recordsTbody.innerHTML = '<tr><td colspan="13" class="empty-state-cell">Nenhum registro encontrado para os filtros atuais.</td></tr>';
+      elements.recordsTbody.innerHTML = '<tr><td colspan="12" class="empty-state-cell">Nenhum registro encontrado para os filtros atuais.</td></tr>';
       return;
     }
 
@@ -362,16 +421,6 @@
         <td>${UiService.escapeHtml(record.descricao || "-")}</td>
         <td>${UiService.escapeHtml(ExcelService.formatDateDisplay(record.entrega))}</td>
         <td>${UiService.escapeHtml(ExcelService.formatNumber(record.saldo))}</td>
-        <td>${UiService.escapeHtml(ExcelService.formatPercent(record.percentual))}</td>
-        <td>
-          <input
-            class="presence-check"
-            data-record-id="${record.id}"
-            data-field="antecipacaoCliente"
-            type="checkbox"
-            ${record.antecipacaoCliente ? "checked" : ""}
-          >
-        </td>
         <td><span class="criticality-badge ${UiService.criticalityBadgeClass(record.criticidade)}">${UiService.escapeHtml(UiService.criticalityLabel(record.criticidade))}</span></td>
         <td><textarea class="editable-textarea" data-record-id="${record.id}" data-field="planoAcao" rows="2">${UiService.escapeHtml(record.planoAcao)}</textarea></td>
         <td><input class="editable-input" data-record-id="${record.id}" data-field="responsavel" type="text" value="${UiService.escapeHtml(record.responsavel)}"></td>
@@ -383,6 +432,15 @@
             <option value="em_andamento" ${record.statusAcao === "em_andamento" ? "selected" : ""}>Em andamento</option>
             <option value="concluido" ${record.statusAcao === "concluido" ? "selected" : ""}>Concluído</option>
           </select>
+        </td>
+        <td class="record-expand-cell">
+          <button
+            class="row-expand-btn"
+            data-toggle-record="${record.id}"
+            type="button"
+            aria-expanded="${state.expandedRecords[record.id] ? "true" : "false"}"
+            title="Mais detalhes"
+          >&#8942;</button>
         </td>
       </tr>
     `).join("");
@@ -400,26 +458,102 @@
 
       detailsRow.className = `record-ops-row row-${record.criticidade}`;
       detailsRow.innerHTML = `
-        <td colspan="9" class="record-ops-cell">
+        <td colspan="7" class="record-ops-cell">
           <div class="record-ops-tags">${operationsInfo.markup}</div>
         </td>
-        <td colspan="4" class="record-ops-spacer"></td>
+        <td colspan="5" class="record-ops-spacer"></td>
       `;
 
       referenceRow.insertAdjacentElement("afterend", detailsRow);
+
+      if (state.expandedRecords[record.id]) {
+        const expandRow = document.createElement("tr");
+        expandRow.className = "record-expand-row";
+        expandRow.innerHTML = `
+          <td colspan="12" class="record-expand-panel">
+            <div class="record-expand-grid">
+              <div class="record-expand-summary record-expand-span-2">
+                <article class="record-expand-stat">
+                  <span>Planejado</span>
+                  <strong>${UiService.escapeHtml(ExcelService.formatNumber(record.planejado))}</strong>
+                </article>
+                <article class="record-expand-stat">
+                  <span>Realizado</span>
+                  <strong>${UiService.escapeHtml(ExcelService.formatNumber(record.realizado))}</strong>
+                </article>
+                <article class="record-expand-stat">
+                  <span>Saldo</span>
+                  <strong>${UiService.escapeHtml(ExcelService.formatNumber(record.saldo))}</strong>
+                </article>
+              </div>
+              <div class="record-expand-field">
+                <span>Antecipacao</span>
+                <label class="record-expand-check">
+                  <input
+                    class="presence-check"
+                    data-record-id="${record.id}"
+                    data-field="antecipacaoCliente"
+                    type="checkbox"
+                    ${record.antecipacaoCliente ? "checked" : ""}
+                  >
+                  <strong>${record.antecipacaoCliente ? "Solicitada pelo cliente" : "Nao marcada"}</strong>
+                </label>
+              </div>
+              <label class="record-expand-field record-expand-span-2">
+                <span>Observacoes</span>
+                <textarea class="editable-textarea" data-record-id="${record.id}" data-field="observacoes" rows="3">${UiService.escapeHtml(record.observacoes || "")}</textarea>
+              </label>
+              <label class="record-expand-field record-expand-span-2">
+                <span>Detalhes da antecipacao</span>
+                <textarea class="editable-textarea" data-record-id="${record.id}" data-field="detalhesAntecipacao" rows="3" ${record.antecipacaoCliente ? "" : "disabled"} placeholder="${record.antecipacaoCliente ? "Detalhe a solicitacao do cliente" : "Disponivel apenas quando houver antecipacao"}">${UiService.escapeHtml(record.detalhesAntecipacao || "")}</textarea>
+              </label>
+              <label class="record-expand-field">
+                <span>Data solicitada pelo cliente</span>
+                <input class="editable-input" data-record-id="${record.id}" data-field="dataSolicitadaCliente" type="date" value="${UiService.escapeHtml(record.dataSolicitadaCliente || "")}">
+              </label>
+              <label class="record-expand-field">
+                <span>Percentual (%)</span>
+                <input class="editable-input" type="text" value="${UiService.escapeHtml(ExcelService.formatPercent(record.percentual))}" readonly>
+              </label>
+            </div>
+          </td>
+        `;
+
+        detailsRow.insertAdjacentElement("afterend", expandRow);
+      }
     });
   }
 
   function renderGeneralPendings() {
-    if (!state.generalPendings.length) {
-      state.generalPendings = [createEmptyPending()];
+    const pendings = getFilteredGeneralPendings();
+
+    if (!pendings.length) {
+      elements.generalPendingTbody.innerHTML = '<tr><td colspan="6" class="empty-state-cell">Nenhuma pendência geral cadastrada.</td></tr>';
+      return;
     }
 
-    elements.generalPendingTbody.innerHTML = state.generalPendings.map((pending) => `
-      <tr>
-        <td><textarea class="editable-textarea" data-pending-id="${pending.id}" data-field="acao" rows="2">${UiService.escapeHtml(pending.acao)}</textarea></td>
+    elements.generalPendingTbody.innerHTML = pendings.map((pending) => `
+      <tr class="${getPendingRowTone(pending)}">
+        <td><textarea class="editable-textarea" data-pending-id="${pending.id}" data-field="causa" rows="2">${UiService.escapeHtml(pending.causa)}</textarea></td>
+        <td>
+          <textarea class="editable-textarea" data-pending-id="${pending.id}" data-field="acao" rows="2">${UiService.escapeHtml(pending.acao)}</textarea>
+          <div class="pending-inline-meta">
+            Aberta em ${UiService.escapeHtml(ExcelService.formatDateDisplay(pending.dataAbertura))}
+          </div>
+        </td>
         <td><input class="editable-input" data-pending-id="${pending.id}" data-field="responsavel" type="text" value="${UiService.escapeHtml(pending.responsavel)}"></td>
-        <td><input class="editable-input" data-pending-id="${pending.id}" data-field="prazo" type="date" value="${UiService.escapeHtml(pending.prazo)}"></td>
+        <td>
+          <input class="editable-input" data-pending-id="${pending.id}" data-field="prazo" type="date" value="${UiService.escapeHtml(pending.prazo)}">
+          ${pending.historicoPrazos && pending.historicoPrazos.length ? `
+            <div class="pending-deadline-history">
+              ${pending.historicoPrazos.map((entry) => `
+                <span class="pending-deadline-chip">
+                  ${UiService.escapeHtml(ExcelService.formatDateDisplay(entry.data))}
+                </span>
+              `).join("")}
+            </div>
+          ` : ""}
+        </td>
         <td>
           <select class="editable-select" data-pending-id="${pending.id}" data-field="status">
             <option value="pendente" ${pending.status === "pendente" ? "selected" : ""}>Pendente</option>
@@ -430,6 +564,90 @@
         <td><button class="btn btn-ghost" data-remove-pending="${pending.id}" type="button">Remover</button></td>
       </tr>
     `).join("");
+  }
+
+  function persistGeneralPendings() {
+    state.generalPendings = state.generalPendings.map((pending) => normalizePending(pending));
+    StorageService.saveGeneralPendings(state.generalPendings);
+  }
+
+  function classifyPendingDue(pending) {
+    const today = "2026-07-27";
+    const dueDate = ExcelService.parseDate(pending.prazo);
+
+    if (!dueDate) {
+      return "no-date";
+    }
+    if (dueDate < today) {
+      return "late";
+    }
+    if (dueDate === today) {
+      return "today";
+    }
+    return "upcoming";
+  }
+
+  function getPendingRowTone(pending) {
+    if (pending.status === "concluido") {
+      return "pending-row-done";
+    }
+    if (classifyPendingDue(pending) === "late") {
+      return "pending-row-late";
+    }
+    if (pending.status === "em_andamento") {
+      return "pending-row-progress";
+    }
+    return "";
+  }
+
+  function getFilteredGeneralPendings() {
+    return state.generalPendings.filter((pending) => {
+      if (state.pendingFilters.owner) {
+        const owner = String(pending.responsavel || "").toLowerCase();
+        if (!owner.includes(state.pendingFilters.owner.toLowerCase())) {
+          return false;
+        }
+      }
+
+      if (state.pendingFilters.status && pending.status !== state.pendingFilters.status) {
+        return false;
+      }
+
+      if (state.pendingFilters.due && classifyPendingDue(pending) !== state.pendingFilters.due) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  function renderGeneralPendingsSummary() {
+    const pendings = getFilteredGeneralPendings();
+    const totals = pendings.reduce((accumulator, pending) => {
+      accumulator.total += 1;
+      if (pending.status === "pendente") {
+        accumulator.pendente += 1;
+      }
+      if (pending.status === "em_andamento") {
+        accumulator.emAndamento += 1;
+      }
+      if (classifyPendingDue(pending) === "late" && pending.status !== "concluido") {
+        accumulator.vencidas += 1;
+      }
+      return accumulator;
+    }, {
+      total: 0,
+      pendente: 0,
+      emAndamento: 0,
+      vencidas: 0
+    });
+
+    elements.pendingSummaryCards.innerHTML = [
+      UiService.summaryCard("Pendências filtradas", String(totals.total), "is-total"),
+      UiService.summaryCard("Pendentes", String(totals.pendente), "is-critical"),
+      UiService.summaryCard("Em andamento", String(totals.emAndamento), "is-attention"),
+      UiService.summaryCard("Vencidas", String(totals.vencidas), "is-critical")
+    ].join("");
   }
 
   function renderAttendance() {
@@ -475,8 +693,7 @@
       createdAt: existing?.createdAt || now,
       updatedAt: now,
       attendance: state.attendance,
-      items: state.records,
-      generalPendings: state.generalPendings
+      items: state.records
     };
   }
 
@@ -590,6 +807,7 @@
     renderClientFilterOptions();
     renderSummary();
     renderRecordsTable();
+    renderGeneralPendingsSummary();
     renderGeneralPendings();
     renderPreview(buildCurrentSnapshot());
   }
@@ -615,8 +833,14 @@
         return;
       }
 
-      record[field] = field === "antecipacaoCliente" ? target.checked : target.value;
-      record.criticidade = classifyCriticality(record);
+        if (field === "antecipacaoCliente") {
+          record[field] = target.checked;
+        } else if (field === "percentual") {
+          record[field] = target.value === "" ? "" : Number(target.value);
+        } else {
+          record[field] = target.value;
+        }
+        record.criticidade = classifyCriticality(record);
 
       const shouldRerenderTable = field === "antecipacaoCliente";
 
@@ -628,6 +852,15 @@
 
       renderPreview(buildCurrentSnapshot());
     }
+
+  function toggleRecordExpansion(recordId) {
+    if (!recordId) {
+      return;
+    }
+
+    state.expandedRecords[recordId] = !state.expandedRecords[recordId];
+    renderRecordsTable();
+  }
 
   function handlePendingEdit(target) {
     const pendingId = target.dataset.pendingId;
@@ -641,8 +874,19 @@
       return;
     }
 
+    const shouldRerenderPendings = field === "prazo" || field === "status";
+
+    if (field === "prazo") {
+      appendPendingDeadlineHistory(pending, pending.prazo, target.value);
+    }
+
     pending[field] = target.value;
-    renderPreview(buildCurrentSnapshot());
+    persistGeneralPendings();
+    renderGeneralPendingsSummary();
+
+    if (shouldRerenderPendings) {
+      renderGeneralPendings();
+    }
   }
 
   function addAttendanceParticipant() {
@@ -705,8 +949,8 @@
       state.filters.mode = "all";
       state.filters.search = "";
       state.filters.deliveryDate = "";
+      state.expandedRecords = {};
       state.attendance = buildAttendanceFromCatalog();
-      state.generalPendings = [createEmptyPending()];
       elements.filterCriticality.value = "";
       elements.filterMode.value = "all";
       elements.filterSearch.value = "";
@@ -796,6 +1040,7 @@
   function loadMinuteIntoWorkspace(minute) {
     state.currentMinuteId = minute.id;
     state.fileName = minute.fileName || "";
+    state.expandedRecords = {};
     state.attendance = (minute.attendance || []).length
       ? minute.attendance.map((participant) => ({
         role: "",
@@ -806,9 +1051,6 @@
       ...ExcelService.createEditableFields(),
       ...item
     })));
-    state.generalPendings = (minute.generalPendings || []).length
-      ? minute.generalPendings.map((pending) => ({ ...pending }))
-      : [createEmptyPending()];
     state.meeting = {
       subject: minute.subject || "",
       meetingDate: minute.meetingDate || new Date().toISOString().slice(0, 10),
@@ -915,6 +1157,15 @@
       renderRecordsTable();
     });
 
+    elements.recordsTbody.addEventListener("click", function (event) {
+      const button = event.target.closest("[data-toggle-record]");
+      if (!button) {
+        return;
+      }
+
+      toggleRecordExpansion(button.dataset.toggleRecord);
+    });
+
     elements.recordsTbody.addEventListener("input", function (event) {
       handleRecordEdit(event.target);
     });
@@ -928,22 +1179,36 @@
     elements.generalPendingTbody.addEventListener("change", function (event) {
       handlePendingEdit(event.target);
     });
-    elements.generalPendingTbody.addEventListener("click", function (event) {
-      const button = event.target.closest("[data-remove-pending]");
-      if (!button) {
-        return;
-      }
-      const pendingId = button.dataset.removePending;
-      state.generalPendings = state.generalPendings.filter((pending) => pending.id !== pendingId);
-      renderGeneralPendings();
-      renderPreview(buildCurrentSnapshot());
-    });
+      elements.generalPendingTbody.addEventListener("click", function (event) {
+        const button = event.target.closest("[data-remove-pending]");
+        if (!button) {
+          return;
+        }
+        const pendingId = button.dataset.removePending;
+        state.generalPendings = state.generalPendings.filter((pending) => pending.id !== pendingId);
+        persistGeneralPendings();
+        renderGeneralPendingsSummary();
+        renderGeneralPendings();
+      });
 
-    document.getElementById("add-pending-btn").addEventListener("click", function () {
-      state.generalPendings.push(createEmptyPending());
-      renderGeneralPendings();
-      renderPreview(buildCurrentSnapshot());
-    });
+      document.getElementById("add-pending-btn").addEventListener("click", function () {
+        state.generalPendings.push(createEmptyPending());
+        persistGeneralPendings();
+        renderGeneralPendingsSummary();
+        renderGeneralPendings();
+      });
+
+      [
+        ["input", elements.pendingFilterOwner, "owner"],
+        ["change", elements.pendingFilterStatus, "status"],
+        ["change", elements.pendingFilterDue, "due"]
+      ].forEach(([eventName, element, key]) => {
+        element.addEventListener(eventName, function () {
+          state.pendingFilters[key] = element.value;
+          renderGeneralPendingsSummary();
+          renderGeneralPendings();
+        });
+      });
 
     document.getElementById("save-minute-btn").addEventListener("click", saveCurrentMinute);
     elements.exportActionsOnly.addEventListener("change", function () {
@@ -1067,7 +1332,14 @@
       role: String(participant.role || "").trim()
     })).filter((participant) => participant.name);
     state.attendance = buildAttendanceFromCatalog();
-    state.generalPendings = [createEmptyPending()];
+    const persistedGeneralPendings = StorageService.loadGeneralPendings();
+    if (persistedGeneralPendings === null) {
+      state.generalPendings = [createEmptyPending()];
+      persistGeneralPendings();
+    } else {
+      state.generalPendings = persistedGeneralPendings.map((pending) => normalizePending(pending));
+      persistGeneralPendings();
+    }
     applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "light");
     syncMeetingForm();
     renderOwnerOptions();
@@ -1080,3 +1352,6 @@
 
   document.addEventListener("DOMContentLoaded", bootstrap);
 })();
+
+
+

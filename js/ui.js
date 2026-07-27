@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   function escapeHtml(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")
@@ -107,8 +107,15 @@
                 <td>${escapeHtml(ExcelService.formatPercent(item.percentual))}</td>
                 <td>${item.antecipacaoCliente ? "Sim" : "-"}</td>
                 <td>${escapeHtml(item.setores || "-")}</td>
-                <td>${escapeHtml(item.planoAcao || "-")}</td>
-                <td>${escapeHtml(item.responsavel || "-")}</td>
+                <td>
+                  ${escapeHtml(item.planoAcao || "-")}
+                  ${item.observacoes ? `<div class="minute-inline-note"><strong>Obs:</strong> ${escapeHtml(item.observacoes)}</div>` : ""}
+                </td>
+                <td>
+                  ${escapeHtml(item.responsavel || "-")}
+                  ${item.dataSolicitadaCliente ? `<div class="minute-inline-note"><strong>Solicitada:</strong> ${escapeHtml(ExcelService.formatDateDisplay(item.dataSolicitadaCliente))}</div>` : ""}
+                  ${item.detalhesAntecipacao ? `<div class="minute-inline-note"><strong>Antecipacao:</strong> ${escapeHtml(item.detalhesAntecipacao)}</div>` : ""}
+                </td>
                 <td>${escapeHtml(ExcelService.formatDateDisplay(item.prazo))}</td>
                 <td><span class="status-badge ${statusBadgeClass(item.statusAcao, item.prazo)}">${escapeHtml(formatStatusLabel(item.statusAcao))}</span></td>
               </tr>
@@ -116,15 +123,6 @@
           </tbody>
         </table>
       </section>
-    `).join("");
-
-    const pendingsMarkup = (snapshot.generalPendings || []).map((pending) => `
-      <tr>
-        <td>${escapeHtml(pending.acao || "-")}</td>
-        <td>${escapeHtml(pending.responsavel || "-")}</td>
-        <td>${escapeHtml(ExcelService.formatDateDisplay(pending.prazo))}</td>
-        <td><span class="status-badge ${statusBadgeClass(pending.status, pending.prazo)}">${escapeHtml(formatStatusLabel(pending.status))}</span></td>
-      </tr>
     `).join("");
 
     return `
@@ -147,7 +145,6 @@
           <article class="minute-meta-card"><span>Participantes</span><strong>${escapeHtml(snapshot.participants || "-")}</strong></article>
           <article class="minute-meta-card"><span>Presentes</span><strong>${escapeHtml(String((snapshot.attendance || []).filter((participant) => participant.present).length))}</strong></article>
           <article class="minute-meta-card"><span>Total de itens</span><strong>${escapeHtml(String((snapshot.items || []).length))}</strong></article>
-          <article class="minute-meta-card"><span>Pendências gerais</span><strong>${escapeHtml(String((snapshot.generalPendings || []).length))}</strong></article>
         </section>
 
         <section class="pending-card">
@@ -172,22 +169,6 @@
           ${clientSections || '<div class="empty-state-card">Nenhum item disponível.</div>'}
         </section>
 
-        <section class="pending-card">
-          <h3>Pendências gerais da reunião</h3>
-          <table class="minute-table">
-            <thead>
-              <tr>
-                <th>Ação</th>
-                <th>Responsável</th>
-                <th>Prazo</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${pendingsMarkup || '<tr><td colspan="4" class="empty-state-cell">Nenhuma pendência geral registrada.</td></tr>'}
-            </tbody>
-          </table>
-        </section>
       </article>
     `;
   }
@@ -229,6 +210,7 @@
                 <div><span>Planejado</span><strong>${escapeHtml(ExcelService.formatNumber(item.planejado))}</strong></div>
                 <div><span>Realizado</span><strong>${escapeHtml(ExcelService.formatNumber(item.realizado))}</strong></div>
                 <div><span>Prazo</span><strong>${escapeHtml(ExcelService.formatDateDisplay(item.prazo))}</strong></div>
+                <div><span>Data solicitada</span><strong>${escapeHtml(ExcelService.formatDateDisplay(item.dataSolicitadaCliente))}</strong></div>
                 <div class="export-grid-span"><span>Descrição</span><strong>${escapeHtml(item.descricao || "-")}</strong></div>
                 <div class="export-grid-span"><span>Operações restantes</span><strong>${escapeHtml(item.setores || "-")}</strong></div>
                 <div class="export-grid-span"><span>Plano de ação</span><strong>${escapeHtml(item.planoAcao || "-")}</strong></div>
@@ -238,15 +220,6 @@
           `).join("")}
         </div>
       </section>
-    `).join("");
-
-    const pendingsMarkup = (snapshot.generalPendings || []).map((pending) => `
-      <tr>
-        <td>${escapeHtml(pending.acao || "-")}</td>
-        <td>${escapeHtml(pending.responsavel || "-")}</td>
-        <td>${escapeHtml(ExcelService.formatDateDisplay(pending.prazo))}</td>
-        <td>${escapeHtml(formatStatusLabel(pending.status))}</td>
-      </tr>
     `).join("");
 
     return `
@@ -296,23 +269,6 @@
           <h2 class="export-section-title">Itens por cliente</h2>
           ${clientSections || '<div class="export-empty">Nenhum item disponível.</div>'}
         </section>
-
-        <section class="export-pending-section">
-          <h2 class="export-section-title">Pendências gerais da reunião</h2>
-          <table class="export-pending-table">
-            <thead>
-              <tr>
-                <th>Ação</th>
-                <th>Responsável</th>
-                <th>Prazo</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${pendingsMarkup || '<tr><td colspan="4">Nenhuma pendência geral registrada.</td></tr>'}
-            </tbody>
-          </table>
-        </section>
       </article>
     `;
   }
@@ -328,3 +284,5 @@
     summaryCard
   };
 })();
+
+
